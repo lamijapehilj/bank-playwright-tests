@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { getToken } from "../helpers/auth";
 import { AccountsApi } from "../api/AccountsApi";
 import { TransfersApi } from "../api/TransfersApi";
+import { error } from "node:console";
 
 test("Login returns a token", async ({ request }) => {
   const loginResponse = await request.post("/api/login", {
@@ -113,12 +114,23 @@ test("Transfer moves money between accounts", async ({ request }) => {
   expect(toBalanceAfter).toBe(toInitialDeposit + amount);
 });
 
-test("Transfer with zero amount is rejected", async ({ request }) => {
+
+const rejectedTransfers = [
+  {amount: 0, error: "amount must be greater than 0", status: 400},
+  {amount: -50, error: "amount must be greater than 0", status: 400},
+  {amount: 10.555, error: "amount can have at most 2 decimal places", status: 400},
+  {amount: 5000, error: "Insufficient funds", status: 422},
+  {amount: 15000, error: "amount exceeds the transfer limit of 10000.00", status: 422}
+]
+
+for (const testCase of rejectedTransfers) {
+test(`Transfer with amount ${testCase.amount} is rejected`, async ({ request }) => {
   const token = await getToken(
     request,
     process.env.LAMIJA_USERNAME!,
     process.env.LAMIJA_PASSWORD!,
   );
+
 
   const accountsApi = new AccountsApi(request, token);
   const transfersApi = new TransfersApi(request, token);
@@ -127,7 +139,9 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   const fromAccountResponse = await accountsApi.create(
     "CHECKING",
     fromInitialDeposit,
-  );
+); 
+
+
   expect(fromAccountResponse.status()).toEqual(201);
   const fromAccountResponseJSON = await fromAccountResponse.json();
   const fromAccountId = fromAccountResponseJSON.account.id;
@@ -146,13 +160,13 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   const transferResponse = await transfersApi.create(
     fromAccountId,
     toAccountId,
-    0,
+    testCase.amount,
     "any",
   );
 
-  expect(transferResponse.status(), await transferResponse.text()).toBe(400);
+  expect(transferResponse.status(), await transferResponse.text()).toBe(testCase.status);
   const transferResponseJSON = await transferResponse.json();
-  expect(transferResponseJSON.error).toBe("amount must be greater than 0");
+  expect(transferResponseJSON.error).toBe(testCase.error);
 
   const afterTransferResponse = await accountsApi.get(fromAccountId);
   expect(afterTransferResponse.status()).toEqual(200);
@@ -168,3 +182,4 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   const toBalanceAfterTransfer = toAfterTransferResponseJSON.account.balance;
   expect(toBalanceAfterTransfer).toEqual(toBalanceBeforeTransfer);
 });
+}

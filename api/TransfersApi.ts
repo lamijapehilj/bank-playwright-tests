@@ -1,4 +1,4 @@
-import { APIRequestContext } from "playwright/test;    
+import { APIRequestContext } from "@playwright/test";
 
 export class TransfersApi {
     constructor (private request: APIRequestContext,

@@ -1,11 +1,11 @@
-import { APIRequestContext } from "playwright-core";    
+import { APIRequestContext } from "playwright/test;    
 
 export class TransfersApi {
     constructor (private request: APIRequestContext,
         private token: string
     ) {}
 
-async transfer(
+async create(
     fromAccountId: string,
     toAccountId: string,
     amount: number,

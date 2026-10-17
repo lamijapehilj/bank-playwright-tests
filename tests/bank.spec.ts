@@ -82,7 +82,7 @@ test("Transfer moves money between accounts", async ({ request }) => {
 
   const amount = 100;
 
-  const transferResponse = await transfersApi.transfer(
+  const transferResponse = await transfersApi.create(
     fromAccountId,
     toAccountId,
     amount,
@@ -143,7 +143,7 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   const toAccountId = toAccountResponseJSON.account.id;
   const toBalanceBeforeTransfer = toAccountResponseJSON.account.balance;
 
-  const transferResponse = await transfersApi.transfer(
+  const transferResponse = await transfersApi.create(
     fromAccountId,
     toAccountId,
     0,

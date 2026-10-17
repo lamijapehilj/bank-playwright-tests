@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { getToken } from "../helpers/auth";
+import { AccountsApi } from "../api/AccountsApi";
 
 test("Login returns a token", async ({ request }) => {
   const loginResponse = await request.post("/api/login", {
@@ -43,32 +44,19 @@ test("Get my accounts returns only my accounts", async ({ request }) => {
 test("Transfer moves money between accounts", async ({ request }) => {
   const token = await getToken(request, process.env.LAMIJA_USERNAME!, process.env.LAMIJA_PASSWORD!);
 
+  const accountsApi = new AccountsApi(request, token);
+
   const fromInitialDeposit = 500;
 
-  const addedAccountResponse = await request.post("/api/accounts", {
-    data: {
-      type: "CHECKING",
-      initialDeposit: fromInitialDeposit,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+ const addedAccountResponse = await accountsApi.create("CHECKING", fromInitialDeposit);
+
   expect(addedAccountResponse.status()).toEqual(201);
   const addedAccountResponseJSON = await addedAccountResponse.json();
   const fromAccountId = addedAccountResponseJSON.account.id;
   expect(addedAccountResponseJSON.account.balance).toEqual(fromInitialDeposit);
   //
   const toInitialDeposit = 200;
-  const addedSavingsAccountResponse = await request.post("/api/accounts", {
-    data: {
-      type: "SAVINGS",
-      initialDeposit: toInitialDeposit,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const addedSavingsAccountResponse = await accountsApi.create("SAVINGS", toInitialDeposit)
   expect(addedSavingsAccountResponse.status()).toEqual(201);
   const addedSavingsAccountResponseJSON =
     await addedSavingsAccountResponse.json();

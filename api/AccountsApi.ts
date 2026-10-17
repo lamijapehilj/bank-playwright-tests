@@ -18,4 +18,13 @@ export class AccountsApi {
     });
     return createdAccountResponse;
   }
+
+  async get(accountId: string) {
+    const response = await this.request.get(`/api/accounts/${accountId}`, {
+        headers: {
+            Authorization : `Bearer ${this.token}`
+        }
+    })
+    return response;
+  }
 }

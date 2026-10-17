@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { getToken } from "../helpers/auth";
+import { AccountsApi } from "../api/AccountsApi";
+import { TransfersApi } from "../api/TransfersApi";
 
 test("Login returns a token", async ({ request }) => {
   const loginResponse = await request.post("/api/login", {
@@ -20,7 +22,11 @@ test("Login returns a token", async ({ request }) => {
 });
 
 test("Get my accounts returns only my accounts", async ({ request }) => {
-  const token = await getToken(request, process.env.LAMIJA_USERNAME!, process.env.LAMIJA_PASSWORD!);
+  const token = await getToken(
+    request,
+    process.env.LAMIJA_USERNAME!,
+    process.env.LAMIJA_PASSWORD!,
+  );
 
   const accountsResponse = await request.get("/api/accounts", {
     headers: {
@@ -30,7 +36,6 @@ test("Get my accounts returns only my accounts", async ({ request }) => {
   expect(accountsResponse.status()).toEqual(200);
   const accountsResponseJSON = await accountsResponse.json();
 
-  //check that response has 2 accounts
   const accounts = accountsResponseJSON.accounts;
 
   //check that response contains ACC-1001 and ACC-1002, and does not contain ACC-2001
@@ -41,34 +46,32 @@ test("Get my accounts returns only my accounts", async ({ request }) => {
 });
 
 test("Transfer moves money between accounts", async ({ request }) => {
-  const token = await getToken(request, process.env.LAMIJA_USERNAME!, process.env.LAMIJA_PASSWORD!);
+  const token = await getToken(
+    request,
+    process.env.LAMIJA_USERNAME!,
+    process.env.LAMIJA_PASSWORD!,
+  );
+
+  const accountsApi = new AccountsApi(request, token);
+  const transfersApi = new TransfersApi(request, token);
 
   const fromInitialDeposit = 500;
 
-  const addedAccountResponse = await request.post("/api/accounts", {
-    data: {
-      type: "CHECKING",
-      initialDeposit: fromInitialDeposit,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const addedAccountResponse = await accountsApi.create(
+    "CHECKING",
+    fromInitialDeposit,
+  );
+
   expect(addedAccountResponse.status()).toEqual(201);
   const addedAccountResponseJSON = await addedAccountResponse.json();
   const fromAccountId = addedAccountResponseJSON.account.id;
   expect(addedAccountResponseJSON.account.balance).toEqual(fromInitialDeposit);
-  //
+
   const toInitialDeposit = 200;
-  const addedSavingsAccountResponse = await request.post("/api/accounts", {
-    data: {
-      type: "SAVINGS",
-      initialDeposit: toInitialDeposit,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const addedSavingsAccountResponse = await accountsApi.create(
+    "SAVINGS",
+    toInitialDeposit,
+  );
   expect(addedSavingsAccountResponse.status()).toEqual(201);
   const addedSavingsAccountResponseJSON =
     await addedSavingsAccountResponse.json();
@@ -79,17 +82,12 @@ test("Transfer moves money between accounts", async ({ request }) => {
 
   const amount = 100;
 
-  const transferResponse = await request.post(`/api/transfers`, {
-    data: {
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      amount: amount,
-      description: "Savings",
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const transferResponse = await transfersApi.transfer(
+    fromAccountId,
+    toAccountId,
+    amount,
+    "any Description",
+  );
 
   expect(transferResponse.status(), await transferResponse.text()).toEqual(201);
   const transferResponseJSON = await transferResponse.json();
@@ -97,28 +95,14 @@ test("Transfer moves money between accounts", async ({ request }) => {
   expect(transferResponseJSON.transfer.amount).toBe(amount);
   expect(transferResponseJSON.transfer.status).toBe("COMPLETED");
 
-  const fromBalanceAfterResponse = await request.get(
-    `/api/accounts/${fromAccountId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
+  const fromBalanceAfterResponse = await accountsApi.get(fromAccountId);
 
   expect(fromBalanceAfterResponse.status()).toEqual(200);
   const fromBalanceAfterResponseJSON = await fromBalanceAfterResponse.json();
 
   const fromBalanceAfter = fromBalanceAfterResponseJSON.account.balance;
 
-  const toBalanceAfterResponse = await request.get(
-    `/api/accounts/${toAccountId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
+  const toBalanceAfterResponse = await accountsApi.get(toAccountId);
 
   expect(toBalanceAfterResponse.status()).toEqual(200);
   const toBalanceAfterResponseJSON = await toBalanceAfterResponse.json();
@@ -130,76 +114,54 @@ test("Transfer moves money between accounts", async ({ request }) => {
 });
 
 test("Transfer with zero amount is rejected", async ({ request }) => {
-  const token = await getToken(request, process.env.LAMIJA_USERNAME!, process.env.LAMIJA_PASSWORD!);
+  const token = await getToken(
+    request,
+    process.env.LAMIJA_USERNAME!,
+    process.env.LAMIJA_PASSWORD!,
+  );
+
+  const accountsApi = new AccountsApi(request, token);
+  const transfersApi = new TransfersApi(request, token);
 
   const fromInitialDeposit = 200;
-  const fromAccountResponse = await request.post("/api/accounts", {
-    data: {
-      type: "CHECKING",
-      initialDeposit: fromInitialDeposit,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const fromAccountResponse = await accountsApi.create(
+    "CHECKING",
+    fromInitialDeposit,
+  );
   expect(fromAccountResponse.status()).toEqual(201);
   const fromAccountResponseJSON = await fromAccountResponse.json();
   const fromAccountId = fromAccountResponseJSON.account.id;
   const fromBalanceBeforeTransfer = fromAccountResponseJSON.account.balance;
 
   const toInitialDeposit = 500;
-  const toAccountResponse = await request.post("/api/accounts", {
-    data: {
-      type: "SAVINGS",
-      initialDeposit: toInitialDeposit,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const toAccountResponse = await accountsApi.create(
+    "SAVINGS",
+    toInitialDeposit,
+  );
   expect(toAccountResponse.status()).toEqual(201);
   const toAccountResponseJSON = await toAccountResponse.json();
   const toAccountId = toAccountResponseJSON.account.id;
   const toBalanceBeforeTransfer = toAccountResponseJSON.account.balance;
 
-  const transferResponse = await request.post("/api/transfers", {
-    data: {
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      amount: 0,
-      description: "Savings",
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const transferResponse = await transfersApi.transfer(
+    fromAccountId,
+    toAccountId,
+    0,
+    "any",
+  );
 
-  expect(transferResponse.status()).toBe(400);
+  expect(transferResponse.status(), await transferResponse.text()).toBe(400);
   const transferResponseJSON = await transferResponse.json();
   expect(transferResponseJSON.error).toBe("amount must be greater than 0");
 
-  const afterTransferResponse = await request.get(
-    `/api/accounts/${fromAccountId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
+  const afterTransferResponse = await accountsApi.get(fromAccountId);
   expect(afterTransferResponse.status()).toEqual(200);
   const afterTransferResponseJSON = await afterTransferResponse.json();
   const fromBalanceAfterTransfer = afterTransferResponseJSON.account.balance;
 
   expect(fromBalanceAfterTransfer).toEqual(fromBalanceBeforeTransfer);
 
-  const toAfterTransferResponse = await request.get(
-    `/api/accounts/${toAccountId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
+  const toAfterTransferResponse = await accountsApi.get(toAccountId);
 
   expect(toAfterTransferResponse.status()).toEqual(200);
   const toAfterTransferResponseJSON = await toAfterTransferResponse.json();

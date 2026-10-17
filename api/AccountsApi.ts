@@ -7,7 +7,7 @@ export class AccountsApi {
   ) {}
 
   async create(type: string, initialDeposit: number) {
-    const createdAccountResponse = await this.request.post("/api/accounts", {
+    const response = await this.request.post("/api/accounts", {
       data: {
         type: type,
         initialDeposit: initialDeposit,
@@ -16,7 +16,7 @@ export class AccountsApi {
         Authorization: `Bearer ${this.token}`,
       },
     });
-    return createdAccountResponse;
+    return response;
   }
 
   async get(accountId: string) {
@@ -27,25 +27,4 @@ export class AccountsApi {
     });
     return response;
   }
-
-  async transfer(
-    fromAccountId: string,
-    toAccountId: string,
-    amount: number,
-    description: string,
-  ) {
-    const response = await this.request.post("/api/transfers", {
-      data: {
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      amount: amount,
-      description: description,
-      },
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
-    });
-    return response;
-  }
-
 }

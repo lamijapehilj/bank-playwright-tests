@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { getToken } from "../helpers/auth";
 import { AccountsApi } from "../api/AccountsApi";
+import { TransfersApi } from "../api/TransfersApi";
 
 test("Login returns a token", async ({ request }) => {
   const loginResponse = await request.post("/api/login", {
@@ -35,7 +36,6 @@ test("Get my accounts returns only my accounts", async ({ request }) => {
   expect(accountsResponse.status()).toEqual(200);
   const accountsResponseJSON = await accountsResponse.json();
 
-  //check that response has 2 accounts
   const accounts = accountsResponseJSON.accounts;
 
   //check that response contains ACC-1001 and ACC-1002, and does not contain ACC-2001
@@ -53,6 +53,7 @@ test("Transfer moves money between accounts", async ({ request }) => {
   );
 
   const accountsApi = new AccountsApi(request, token);
+  const transfersApi = new TransfersApi(request, token);
 
   const fromInitialDeposit = 500;
 
@@ -65,7 +66,7 @@ test("Transfer moves money between accounts", async ({ request }) => {
   const addedAccountResponseJSON = await addedAccountResponse.json();
   const fromAccountId = addedAccountResponseJSON.account.id;
   expect(addedAccountResponseJSON.account.balance).toEqual(fromInitialDeposit);
-  //
+
   const toInitialDeposit = 200;
   const addedSavingsAccountResponse = await accountsApi.create(
     "SAVINGS",
@@ -81,7 +82,12 @@ test("Transfer moves money between accounts", async ({ request }) => {
 
   const amount = 100;
 
-  const transferResponse = await accountsApi.transfer(fromAccountId, toAccountId, amount, "any Description")
+  const transferResponse = await transfersApi.transfer(
+    fromAccountId,
+    toAccountId,
+    amount,
+    "any Description",
+  );
 
   expect(transferResponse.status(), await transferResponse.text()).toEqual(201);
   const transferResponseJSON = await transferResponse.json();
@@ -115,6 +121,7 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   );
 
   const accountsApi = new AccountsApi(request, token);
+  const transfersApi = new TransfersApi(request, token);
 
   const fromInitialDeposit = 200;
   const fromAccountResponse = await accountsApi.create(
@@ -136,9 +143,14 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   const toAccountId = toAccountResponseJSON.account.id;
   const toBalanceBeforeTransfer = toAccountResponseJSON.account.balance;
 
-  const transferResponse = await accountsApi.transfer(fromAccountId, toAccountId, 0, "any")
+  const transferResponse = await transfersApi.transfer(
+    fromAccountId,
+    toAccountId,
+    0,
+    "any",
+  );
 
-  expect(transferResponse.status()).toBe(400);
+  expect(transferResponse.status(), await transferResponse.text()).toBe(400);
   const transferResponseJSON = await transferResponse.json();
   expect(transferResponseJSON.error).toBe("amount must be greater than 0");
 

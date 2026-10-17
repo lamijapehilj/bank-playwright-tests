@@ -81,17 +81,7 @@ test("Transfer moves money between accounts", async ({ request }) => {
 
   const amount = 100;
 
-  const transferResponse = await request.post(`/api/transfers`, {
-    data: {
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      amount: amount,
-      description: "Savings",
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const transferResponse = await accountsApi.transfer(fromAccountId, toAccountId, amount, "any Description")
 
   expect(transferResponse.status(), await transferResponse.text()).toEqual(201);
   const transferResponseJSON = await transferResponse.json();
@@ -146,17 +136,7 @@ test("Transfer with zero amount is rejected", async ({ request }) => {
   const toAccountId = toAccountResponseJSON.account.id;
   const toBalanceBeforeTransfer = toAccountResponseJSON.account.balance;
 
-  const transferResponse = await request.post("/api/transfers", {
-    data: {
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      amount: 0,
-      description: "Savings",
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const transferResponse = await accountsApi.transfer(fromAccountId, toAccountId, 0, "any")
 
   expect(transferResponse.status()).toBe(400);
   const transferResponseJSON = await transferResponse.json();

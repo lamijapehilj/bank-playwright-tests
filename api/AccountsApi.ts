@@ -1,4 +1,4 @@
-import { APIRequestContext} from "@playwright/test";
+import { APIRequestContext } from "@playwright/test";
 
 export class AccountsApi {
   constructor(
@@ -21,10 +21,31 @@ export class AccountsApi {
 
   async get(accountId: string) {
     const response = await this.request.get(`/api/accounts/${accountId}`, {
-        headers: {
-            Authorization : `Bearer ${this.token}`
-        }
-    })
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+    });
     return response;
   }
+
+  async transfer(
+    fromAccountId: string,
+    toAccountId: string,
+    amount: number,
+    description: string,
+  ) {
+    const response = await this.request.post("/api/transfers", {
+      data: {
+      fromAccountId: fromAccountId,
+      toAccountId: toAccountId,
+      amount: amount,
+      description: description,
+      },
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+    });
+    return response;
+  }
+
 }

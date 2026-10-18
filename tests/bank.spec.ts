@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import { getToken } from "../helpers/auth";
 import { AccountsApi } from "../api/AccountsApi";
 import { TransfersApi } from "../api/TransfersApi";
-import { error } from "node:console";
 
 test("Login returns a token", async ({ request }) => {
   const loginResponse = await request.post("/api/login", {
@@ -87,7 +86,7 @@ test("Transfer moves money between accounts", async ({ request }) => {
     fromAccountId,
     toAccountId,
     amount,
-    "Salary transfer",
+    "monthly savings",
   );
 
   expect(transferResponse.status(), await transferResponse.text()).toEqual(201);

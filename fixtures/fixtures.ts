@@ -5,8 +5,10 @@ import { TransfersApi } from "../api/TransfersApi";
 
 type MyFixtures = {
   lamijaToken: string;
-  accountsApi: AccountsApi;
-  transfersApi: TransfersApi;
+  lamijaTransfersApi: TransfersApi;
+  amarToken: string;
+  amarTransfersApi: TransfersApi;
+  lamijaAccountsApi: AccountsApi;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -18,12 +20,25 @@ export const test = base.extend<MyFixtures>({
     );
     await use(token);
   },
-  accountsApi: async ({request, lamijaToken}, use) => {
+  lamijaAccountsApi: async ({ request, lamijaToken }, use) => {
     await use(new AccountsApi(request, lamijaToken));
   },
 
-  transfersApi: async({request, lamijaToken}, use) => {
+  lamijaTransfersApi: async ({ request, lamijaToken }, use) => {
     await use(new TransfersApi(request, lamijaToken));
+  },
+
+  amarToken: async ({ request }, use) => {
+    const token = await getToken(
+      request,
+      process.env.AMAR_USERNAME!,
+      process.env.AMAR_PASSWORD!,
+    );
+    await use(token);
+  },
+
+  amarTransfersApi: async ({ request, amarToken }, use) => {
+    await use(new TransfersApi(request, amarToken));
   },
 });
 

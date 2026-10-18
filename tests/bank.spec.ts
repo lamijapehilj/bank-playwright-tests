@@ -1,7 +1,4 @@
-import { test, expect } from "../fixtures/fixtures"
-import { getToken } from "../helpers/auth";
-import { AccountsApi } from "../api/AccountsApi";
-import { TransfersApi } from "../api/TransfersApi";
+import { test, expect } from "../fixtures/fixtures";
 
 test("Login returns a token", async ({ request }) => {
   const loginResponse = await request.post("/api/login", {
@@ -21,7 +18,10 @@ test("Login returns a token", async ({ request }) => {
   expect(token).toBeTruthy();
 });
 
-test("Get my accounts returns only my accounts", async ({ request, lamijaToken }) => {
+test("Get my accounts returns only my accounts", async ({
+  request,
+  lamijaToken,
+}) => {
   const accountsResponse = await request.get("/api/accounts", {
     headers: {
       Authorization: `Bearer ${lamijaToken}`,
@@ -39,10 +39,13 @@ test("Get my accounts returns only my accounts", async ({ request, lamijaToken }
   expect(accountIDs).not.toContain("ACC-2001");
 });
 
-test("Transfer moves money between accounts", async ({ accountsApi, transfersApi }) => {
+test("Transfer moves money between accounts", async ({
+  lamijaAccountsApi,
+  lamijaTransfersApi,
+}) => {
   const fromInitialDeposit = 500;
 
-  const addedAccountResponse = await accountsApi.create(
+  const addedAccountResponse = await lamijaAccountsApi.create(
     "CHECKING",
     fromInitialDeposit,
   );
@@ -53,7 +56,7 @@ test("Transfer moves money between accounts", async ({ accountsApi, transfersApi
   expect(addedAccountResponseJSON.account.balance).toEqual(fromInitialDeposit);
 
   const toInitialDeposit = 200;
-  const addedSavingsAccountResponse = await accountsApi.create(
+  const addedSavingsAccountResponse = await lamijaAccountsApi.create(
     "SAVINGS",
     toInitialDeposit,
   );
@@ -67,7 +70,7 @@ test("Transfer moves money between accounts", async ({ accountsApi, transfersApi
 
   const amount = 100;
 
-  const transferResponse = await transfersApi.create(
+  const transferResponse = await lamijaTransfersApi.create(
     fromAccountId,
     toAccountId,
     amount,
@@ -80,14 +83,14 @@ test("Transfer moves money between accounts", async ({ accountsApi, transfersApi
   expect(transferResponseJSON.transfer.amount).toBe(amount);
   expect(transferResponseJSON.transfer.status).toBe("COMPLETED");
 
-  const fromBalanceAfterResponse = await accountsApi.get(fromAccountId);
+  const fromBalanceAfterResponse = await lamijaAccountsApi.get(fromAccountId);
 
   expect(fromBalanceAfterResponse.status()).toEqual(200);
   const fromBalanceAfterResponseJSON = await fromBalanceAfterResponse.json();
 
   const fromBalanceAfter = fromBalanceAfterResponseJSON.account.balance;
 
-  const toBalanceAfterResponse = await accountsApi.get(toAccountId);
+  const toBalanceAfterResponse = await lamijaAccountsApi.get(toAccountId);
 
   expect(toBalanceAfterResponse.status()).toEqual(200);
   const toBalanceAfterResponseJSON = await toBalanceAfterResponse.json();
@@ -116,10 +119,11 @@ const rejectedTransfers = [
 
 for (const testCase of rejectedTransfers) {
   test(`Transfer with amount ${testCase.amount} is rejected`, async ({
-    accountsApi, transfersApi}) => {
-
+    lamijaAccountsApi,
+    lamijaTransfersApi,
+  }) => {
     const fromInitialDeposit = 200;
-    const fromAccountResponse = await accountsApi.create(
+    const fromAccountResponse = await lamijaAccountsApi.create(
       "CHECKING",
       fromInitialDeposit,
     );
@@ -130,7 +134,7 @@ for (const testCase of rejectedTransfers) {
     const fromBalanceBeforeTransfer = fromAccountResponseJSON.account.balance;
 
     const toInitialDeposit = 500;
-    const toAccountResponse = await accountsApi.create(
+    const toAccountResponse = await lamijaAccountsApi.create(
       "SAVINGS",
       toInitialDeposit,
     );
@@ -139,7 +143,7 @@ for (const testCase of rejectedTransfers) {
     const toAccountId = toAccountResponseJSON.account.id;
     const toBalanceBeforeTransfer = toAccountResponseJSON.account.balance;
 
-    const transferResponse = await transfersApi.create(
+    const transferResponse = await lamijaTransfersApi.create(
       fromAccountId,
       toAccountId,
       testCase.amount,
@@ -152,14 +156,14 @@ for (const testCase of rejectedTransfers) {
     const transferResponseJSON = await transferResponse.json();
     expect(transferResponseJSON.error).toBe(testCase.error);
 
-    const afterTransferResponse = await accountsApi.get(fromAccountId);
+    const afterTransferResponse = await lamijaAccountsApi.get(fromAccountId);
     expect(afterTransferResponse.status()).toEqual(200);
     const afterTransferResponseJSON = await afterTransferResponse.json();
     const fromBalanceAfterTransfer = afterTransferResponseJSON.account.balance;
 
     expect(fromBalanceAfterTransfer).toEqual(fromBalanceBeforeTransfer);
 
-    const toAfterTransferResponse = await accountsApi.get(toAccountId);
+    const toAfterTransferResponse = await lamijaAccountsApi.get(toAccountId);
 
     expect(toAfterTransferResponse.status()).toEqual(200);
     const toAfterTransferResponseJSON = await toAfterTransferResponse.json();
@@ -169,24 +173,13 @@ for (const testCase of rejectedTransfers) {
 }
 
 test("User cannot transfer from another user's account", async ({
-  request,
+  lamijaAccountsApi,
+  amarTransfersApi,
 }) => {
-  const lamijaToken = await getToken(
-    request,
-    process.env.LAMIJA_USERNAME!,
-    process.env.LAMIJA_PASSWORD!,
+  const lamijaAccountsResponse = await lamijaAccountsApi.create(
+    "CHECKING",
+    500,
   );
-
-  const amarToken = await getToken(
-    request,
-    process.env.AMAR_USERNAME!,
-    process.env.AMAR_PASSWORD!,
-  );
-
-  const lamijaAccountApi = new AccountsApi(request, lamijaToken);
-  const amarTransfersApi = new TransfersApi(request, amarToken);
-
-  const lamijaAccountsResponse = await lamijaAccountApi.create("CHECKING", 500);
   expect(
     lamijaAccountsResponse.status(),
     await lamijaAccountsResponse.text(),
@@ -211,7 +204,7 @@ test("User cannot transfer from another user's account", async ({
     "You do not have access to this account",
   );
 
-  const getLamijaAccountResponse = await lamijaAccountApi.get(lamijaAccountId);
+  const getLamijaAccountResponse = await lamijaAccountsApi.get(lamijaAccountId);
   expect(
     getLamijaAccountResponse.status(),
     await getLamijaAccountResponse.text(),

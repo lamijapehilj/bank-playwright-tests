@@ -1,0 +1,35 @@
+name: API tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run API tests
+        run: npx playwright test --project=chromium
+        env:
+          LAMIJA_USERNAME: ${{ secrets.LAMIJA_USERNAME }}
+          LAMIJA_PASSWORD: ${{ secrets.LAMIJA_PASSWORD }}
+          AMAR_USERNAME: ${{ secrets.AMAR_USERNAME }}
+          AMAR_PASSWORD: ${{ secrets.AMAR_PASSWORD }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

@@ -1,6 +1,6 @@
-// Mini Bank API - lokalni bankarski API za vjezbu testiranja
-// Pokretanje: node server/server.js
-// Bez dodatnih paketa, koristi samo ono sto Node vec ima.
+// Mini Bank API - lokalni bank API for practice
+// Run: node server/server.js
+
 
 const http = require("http");
 const crypto = require("crypto");

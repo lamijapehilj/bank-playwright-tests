@@ -125,7 +125,7 @@ const rejectedTransfers = [
   { amount: 5000, error: "Insufficient funds", status: 422 },
   {
     amount: 15000,
-    error: "amount exceeds the transfer limit of 10000.00",
+    error: "amount exceeds the transfer limitt of 10000.00",
     status: 422,
   },
 ];

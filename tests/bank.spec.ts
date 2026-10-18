@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../fixtures/fixtures"
 import { getToken } from "../helpers/auth";
 import { AccountsApi } from "../api/AccountsApi";
 import { TransfersApi } from "../api/TransfersApi";
@@ -21,16 +21,10 @@ test("Login returns a token", async ({ request }) => {
   expect(token).toBeTruthy();
 });
 
-test("Get my accounts returns only my accounts", async ({ request }) => {
-  const token = await getToken(
-    request,
-    process.env.LAMIJA_USERNAME!,
-    process.env.LAMIJA_PASSWORD!,
-  );
-
+test("Get my accounts returns only my accounts", async ({ request, lamijaToken }) => {
   const accountsResponse = await request.get("/api/accounts", {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${lamijaToken}`,
     },
   });
   expect(accountsResponse.status()).toEqual(200);

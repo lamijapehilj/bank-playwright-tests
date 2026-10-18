@@ -1,8 +1,12 @@
 import { test as base } from "@playwright/test";
 import { getToken } from "../helpers/auth";
+import { AccountsApi } from "../api/AccountsApi";
+import { TransfersApi } from "../api/TransfersApi";
 
 type MyFixtures = {
   lamijaToken: string;
+  accountsApi: AccountsApi;
+  transfersApi: TransfersApi;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -13,6 +17,13 @@ export const test = base.extend<MyFixtures>({
       process.env.LAMIJA_PASSWORD!,
     );
     await use(token);
+  },
+  accountsApi: async ({request, lamijaToken}, use) => {
+    await use(new AccountsApi(request, lamijaToken));
+  },
+
+  transfersApi: async({request, lamijaToken}, use) => {
+    await use(new TransfersApi(request, lamijaToken));
   },
 });
 

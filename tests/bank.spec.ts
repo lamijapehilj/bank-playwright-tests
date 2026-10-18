@@ -39,16 +39,7 @@ test("Get my accounts returns only my accounts", async ({ request, lamijaToken }
   expect(accountIDs).not.toContain("ACC-2001");
 });
 
-test("Transfer moves money between accounts", async ({ request }) => {
-  const token = await getToken(
-    request,
-    process.env.LAMIJA_USERNAME!,
-    process.env.LAMIJA_PASSWORD!,
-  );
-
-  const accountsApi = new AccountsApi(request, token);
-  const transfersApi = new TransfersApi(request, token);
-
+test("Transfer moves money between accounts", async ({ accountsApi, transfersApi }) => {
   const fromInitialDeposit = 500;
 
   const addedAccountResponse = await accountsApi.create(
@@ -125,16 +116,7 @@ const rejectedTransfers = [
 
 for (const testCase of rejectedTransfers) {
   test(`Transfer with amount ${testCase.amount} is rejected`, async ({
-    request,
-  }) => {
-    const token = await getToken(
-      request,
-      process.env.LAMIJA_USERNAME!,
-      process.env.LAMIJA_PASSWORD!,
-    );
-
-    const accountsApi = new AccountsApi(request, token);
-    const transfersApi = new TransfersApi(request, token);
+    accountsApi, transfersApi}) => {
 
     const fromInitialDeposit = 200;
     const fromAccountResponse = await accountsApi.create(

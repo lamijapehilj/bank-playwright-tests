@@ -86,7 +86,7 @@ test("Transfer moves money between accounts", async ({ request }) => {
     fromAccountId,
     toAccountId,
     amount,
-    "monthly savings",
+    "monthly savings description",
   );
 
   expect(transferResponse.status(), await transferResponse.text()).toEqual(201);

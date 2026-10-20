@@ -1,11 +1,7 @@
-import { APIRequestContext } from "@playwright/test";
+import { BaseClient } from "./BaseClient";
 
-export class TransfersApi {
-    constructor (private request: APIRequestContext,
-        private token: string
-    ) {}
-
-async create(
+export class TransfersApi extends BaseClient {
+  async create(
     fromAccountId: string,
     toAccountId: string,
     amount: number,
@@ -13,17 +9,13 @@ async create(
   ) {
     const response = await this.request.post("/api/transfers", {
       data: {
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      amount: amount,
-      description: description,
+        fromAccountId: fromAccountId,
+        toAccountId: toAccountId,
+        amount: amount,
+        description: description,
       },
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-      },
+      headers: this.authHeaders(),
     });
     return response;
   }
-
-
 }

@@ -1,22 +1,14 @@
 import { BaseClient } from "./BaseClient";
 
 export class AccountsApi extends BaseClient {
-  async create(type: string, initialDeposit: number) {
-    const response = await this.request.post("/api/accounts", {
-      data: {
-        type: type,
-        initialDeposit: initialDeposit,
-      },
-      headers: this.authHeaders(),
+  create(type: string, initialDeposit: number) {
+    return this.postRequest("/api/accounts", {
+      type: type,
+      initialDeposit: initialDeposit,
     });
-
-    return response;
   }
 
-  async get(accountId: string) {
-    const response = await this.request.get(`/api/accounts/${accountId}`, {
-      headers: this.authHeaders(),
-    });
-    return response;
+  get(accountId: string) {
+    return this.getRequest(`/api/accounts/${accountId}`);
   }
 }

@@ -26,6 +26,8 @@ jobs:
           LAMIJA_PASSWORD: ${{ secrets.LAMIJA_PASSWORD }}
           AMAR_USERNAME: ${{ secrets.AMAR_USERNAME }}
           AMAR_PASSWORD: ${{ secrets.AMAR_PASSWORD }}
+          ACCOUNTS_URL: ${{ secrets.ACCOUNTS_URL }}
+          TRANSFERS_URL: ${{ secrets.TRANSFERS_URL }}
 
       - uses: actions/upload-artifact@v4
         if: always()

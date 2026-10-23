@@ -71,9 +71,21 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: "node server/server.js",
-    url: "http://localhost:3000/api/health",
-    reuseExistingServer: !process.env.CI,
-  },
+    webServer: [
+    {
+      command: "node server/server.js",
+      url: "http://localhost:3000/api/health",
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: "node server/accounts-service.js",
+      url: "http://localhost:3001/api/health",
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: "node server/transfers-service.js",
+      url: "http://localhost:3002/api/health",
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });
